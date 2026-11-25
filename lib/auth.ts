@@ -9,12 +9,19 @@ const adminEmails = (process.env.ADMIN_EMAIL ?? "")
   .map((e) => e.trim().toLowerCase())
   .filter(Boolean);
 
+export const googleEnabled = Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
+
 export const auth = betterAuth({
   database: drizzleAdapter(db, {
     provider: "sqlite",
     schema: { user: schema.user, session: schema.session, account: schema.account, verification: schema.verification },
   }),
   emailAndPassword: { enabled: true, minPasswordLength: 8 },
+  // Google-inloggning aktiveras när GOOGLE_CLIENT_ID och GOOGLE_CLIENT_SECRET finns.
+  socialProviders: googleEnabled
+    ? { google: { clientId: process.env.GOOGLE_CLIENT_ID!, clientSecret: process.env.GOOGLE_CLIENT_SECRET!, prompt: "select_account" } }
+    : {},
+  account: { accountLinking: { enabled: true, trustedProviders: ["google"] } },
   user: {
     additionalFields: {
       role: { type: "string", defaultValue: "user", input: false },

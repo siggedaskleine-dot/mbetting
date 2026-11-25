@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LogoMark } from "@/components/Logo";
 import { LoginForm } from "./LoginForm";
+import { googleEnabled } from "@/lib/auth";
 
 export const metadata: Metadata = { title: "Logga in" };
 
@@ -19,7 +20,7 @@ export default async function LoginPage({ searchParams }: Props) {
       <p className="mt-2 text-center text-sm text-mute">
         {register ? "Skapa ett konto för att skriva i forumet." : "Logga in för att kommentera i forumet."}
       </p>
-      <LoginForm register={register} next={next} />
+      <LoginForm register={register} next={next} google={googleEnabled} />
     </section>
   );
 }
