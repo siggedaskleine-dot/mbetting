@@ -1,105 +1,59 @@
-// Exempeldata för steg 1. Ersätts av riktiga inlägg från databasen i steg 2,
-// när admin kan publicera tips.
+import { and, desc, eq, inArray } from "drizzle-orm";
+import { db } from "./db";
+import { tip, type Tip, type TipStatus } from "./db/schema";
 
-export type TipStatus = "vunnen" | "förlorad" | "pågår";
+export type { Tip, TipStatus };
 
-export type Tip = {
-  slug: string;
-  title: string;
-  sport: string;
-  league: string;
-  match: string;
-  kickoff: string; // ISO
-  pick: string;
-  odds: number;
-  stake: number; // enheter
-  confidence: 1 | 2 | 3 | 4 | 5;
-  status: TipStatus;
-  excerpt: string;
-  body: string[];
+export const statusLabel: Record<TipStatus, string> = {
+  pågår: "Kommande",
+  vunnen: "Vunnen",
+  förlorad: "Förlorad",
+  struken: "Struken",
 };
 
-export const tips: Tip[] = [
-  {
-    slug: "arsenal-chelsea-over-2-5",
-    title: "Derbyt bjuder på mål: över 2,5 i London",
-    sport: "Fotboll",
-    league: "Premier League",
-    match: "Arsenal – Chelsea",
-    kickoff: "2026-11-29T17:30:00+01:00",
-    pick: "Över 2,5 mål",
-    odds: 1.92,
-    stake: 2,
-    confidence: 4,
-    status: "pågår",
-    excerpt: "Båda lagen har skapat över 1,8 xG per match senaste fem. Chelseas backlinje läcker på fasta situationer.",
-    body: [
-      "Arsenal har varit målfarliga hemma hela hösten och Chelsea har släppt in i sju raka bortamatcher.",
-      "Båda lagen pressar högt, vilket ger ytor i omställningar. Jag tycker att 1,92 är för högt för över 2,5.",
-    ],
-  },
-  {
-    slug: "frolunda-farjestad-hemmaseger",
-    title: "Frölunda tar hand om Färjestad",
-    sport: "Ishockey",
-    league: "SHL",
-    match: "Frölunda – Färjestad",
-    kickoff: "2026-11-27T19:00:00+01:00",
-    pick: "Frölunda vinner (inkl. förlängning)",
-    odds: 1.85,
-    stake: 1.5,
-    confidence: 3,
-    status: "pågår",
-    excerpt: "Färjestad saknar förstemålvakten och spelar tredje matchen på fyra dagar.",
-    body: [
-      "Frölundas powerplay är ligans bästa och Färjestad drar på sig många utvisningar borta.",
-      "Med trötta ben och en reservmålvakt ser jag värde på hemmalaget.",
-    ],
-  },
-  {
-    slug: "real-madrid-btts",
-    title: "Real Madrid – Sevilla: båda lagen gör mål",
-    sport: "Fotboll",
-    league: "La Liga",
-    match: "Real Madrid – Sevilla",
-    kickoff: "2026-11-22T21:00:00+01:00",
-    pick: "Båda lagen gör mål",
-    odds: 2.05,
-    stake: 1,
-    confidence: 3,
-    status: "vunnen",
-    excerpt: "Sevilla har gjort mål i tio raka bortamatcher. Det slutade 3–1.",
-    body: ["Sevilla har gjort mål i tio raka bortamatcher och Real Madrid har släppt in i fyra raka. Det slutade 3–1."],
-  },
-  {
-    slug: "sinner-alcaraz-set",
-    title: "Över 3,5 set i kvartsfinalen",
-    sport: "Tennis",
-    league: "ATP Finals",
-    match: "Sinner – Alcaraz",
-    kickoff: "2026-11-20T14:00:00+01:00",
-    pick: "Över 3,5 set",
-    odds: 1.75,
-    stake: 1,
-    confidence: 2,
-    status: "förlorad",
-    excerpt: "Jämn duell på papperet men Sinner vann på raka set. Sånt händer.",
-    body: ["Jämn duell på papperet, men Sinner vann på raka set. Sånt händer."],
-  },
-];
+export async function getPublishedTips(limit?: number) {
+  const q = db.select().from(tip).where(eq(tip.published, true)).orderBy(desc(tip.kickoff));
+  return limit ? q.limit(limit) : q;
+}
 
-export const stats = {
-  winRate: 61,
-  roi: 14.2,
-  tipsTotal: 248,
-  units: 38.6,
-};
+export async function getPublishedTip(slug: string) {
+  const [row] = await db.select().from(tip).where(and(eq(tip.slug, slug), eq(tip.published, true)));
+  return row ?? null;
+}
+
+export type Stats = { winRate: number | null; roi: number | null; units: number; tipsTotal: number };
+
+export async function getStats(): Promise<Stats> {
+  const all = await db.select().from(tip).where(eq(tip.published, true));
+  const settled = all.filter((t) => t.status === "vunnen" || t.status === "förlorad");
+  const won = settled.filter((t) => t.status === "vunnen");
+  const staked = settled.reduce((s, t) => s + t.stake, 0);
+  const units = settled.reduce((s, t) => s + (t.status === "vunnen" ? t.stake * (t.odds - 1) : -t.stake), 0);
+  return {
+    tipsTotal: all.length,
+    winRate: settled.length ? (won.length / settled.length) * 100 : null,
+    roi: staked ? (units / staked) * 100 : null,
+    units,
+  };
+}
+
+export async function getUpcomingCount() {
+  const rows = await db
+    .select({ id: tip.id })
+    .from(tip)
+    .where(and(eq(tip.published, true), inArray(tip.status, ["pågår"])));
+  return rows.length;
+}
 
 export function formatOdds(o: number) {
   return o.toFixed(2).replace(".", ",");
 }
 
-export function formatKickoff(iso: string) {
+export function formatNumber(n: number, decimals = 1) {
+  return n.toFixed(decimals).replace(".", ",");
+}
+
+export function formatKickoff(d: Date) {
   return new Intl.DateTimeFormat("sv-SE", {
     weekday: "short",
     day: "numeric",
@@ -107,5 +61,17 @@ export function formatKickoff(iso: string) {
     hour: "2-digit",
     minute: "2-digit",
     timeZone: "Europe/Stockholm",
-  }).format(new Date(iso));
+  }).format(d);
+}
+
+export function slugify(s: string) {
+  return s
+    .toLowerCase()
+    .replace(/å|ä/g, "a")
+    .replace(/ö/g, "o")
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 80);
 }

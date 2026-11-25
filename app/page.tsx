@@ -4,22 +4,25 @@ import { Reveal } from "@/components/Reveal";
 import { TipCard } from "@/components/TipCard";
 import { CountUp } from "@/components/CountUp";
 import { GlowCard } from "@/components/GlowCard";
-import { stats, tips } from "@/lib/tips";
+import { getPublishedTips, getStats, getUpcomingCount } from "@/lib/tips";
 
-export default function Home() {
-  const upcoming = tips.filter((t) => t.status === "pågår");
-  const latest = tips.slice(0, 3);
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const [latest, stats, upcoming] = await Promise.all([getPublishedTips(3), getStats(), getUpcomingCount()]);
 
   return (
     <>
       {/* Hero */}
       <section className="relative mx-auto max-w-6xl px-4 pb-20 pt-16 sm:px-6 sm:pt-24">
+        {upcoming > 0 && (
         <Reveal>
           <span className="inline-flex items-center gap-2 rounded-full border border-win/30 bg-win/10 px-4 py-1.5 text-xs font-semibold text-win">
             <span className="pulse-dot h-2 w-2 rounded-full bg-win" />
-            {upcoming.length} nya tips för helgen
+            {upcoming} kommande tips att spela
           </span>
         </Reveal>
+        )}
         <Reveal delay={80}>
           <h1 className="mt-6 max-w-4xl font-display text-5xl font-extrabold leading-[1.05] tracking-tight sm:text-7xl">
             Speltips som bygger på <span className="text-gradient">analys</span>, inte magkänsla.
@@ -45,10 +48,10 @@ export default function Home() {
         <Reveal delay={320}>
           <dl className="mt-16 grid grid-cols-2 gap-px overflow-hidden rounded-3xl border border-line bg-line sm:grid-cols-4">
             {[
-              { label: "Träffsäkerhet", node: <CountUp to={stats.winRate} suffix=" %" /> },
-              { label: "ROI", node: <CountUp to={stats.roi} decimals={1} prefix="+" suffix=" %" /> },
+              { label: "Träffsäkerhet", node: stats.winRate === null ? "–" : <CountUp to={stats.winRate} suffix=" %" /> },
+              { label: "ROI", node: stats.roi === null ? "–" : <CountUp to={stats.roi} decimals={1} prefix={stats.roi >= 0 ? "+" : ""} suffix=" %" /> },
               { label: "Publicerade tips", node: <CountUp to={stats.tipsTotal} /> },
-              { label: "Vinst i enheter", node: <CountUp to={stats.units} decimals={1} prefix="+" /> },
+              { label: "Resultat i enheter", node: <CountUp to={stats.units} decimals={1} prefix={stats.units >= 0 ? "+" : ""} /> },
             ].map((s) => (
               <div key={s.label} className="bg-panel/90 p-6 backdrop-blur">
                 <dt className="text-xs uppercase tracking-wider text-mute">{s.label}</dt>
@@ -72,6 +75,9 @@ export default function Home() {
             <Link href="/tips" className="text-sm font-medium text-mute hover:text-white">Alla tips →</Link>
           </div>
         </Reveal>
+        {latest.length === 0 && (
+          <p className="mt-10 rounded-2xl border border-line bg-panel/60 p-8 text-center text-mute">Inga tips publicerade än. Snart kommer de första!</p>
+        )}
         <div className="mt-10 grid gap-6 md:grid-cols-3">
           {latest.map((t, i) => (
             <Reveal key={t.slug} delay={i * 100}>
