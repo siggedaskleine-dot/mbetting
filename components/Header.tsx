@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Logo } from "./Logo";
+import { authClient } from "@/lib/auth-client";
 
 const links = [
   { href: "/", label: "Hem" },
@@ -15,6 +16,12 @@ export function Header() {
   const pathname = usePathname();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { data: session } = authClient.useSession();
+  const user = session?.user;
+  const signOut = async () => {
+    await authClient.signOut();
+    window.location.href = "/";
+  };
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -56,12 +63,31 @@ export function Header() {
         </nav>
 
         <div className="hidden items-center gap-3 md:flex">
-          <Link href="/logga-in" className="text-sm font-medium text-mute transition-colors hover:text-white">
-            Logga in
-          </Link>
-          <Link href="/logga-in?registrera=1" className="btn-primary !px-5 !py-2.5 text-sm">
-            Bli medlem
-          </Link>
+          {user ? (
+            <>
+              {user.role === "admin" && (
+                <Link href="/admin" className="rounded-full border border-gold/40 bg-gold/10 px-4 py-2 text-sm font-semibold text-gold transition hover:bg-gold/20">
+                  Admin
+                </Link>
+              )}
+              <span className="flex items-center gap-2 text-sm text-mute">
+                <span className="grid h-8 w-8 place-items-center rounded-full bg-gradient-to-br from-win to-gold text-xs font-bold uppercase text-ink">
+                  {user.name.slice(0, 1)}
+                </span>
+                {user.name}
+              </span>
+              <button onClick={signOut} className="text-sm font-medium text-mute transition-colors hover:text-white">Logga ut</button>
+            </>
+          ) : (
+            <>
+              <Link href="/logga-in" className="text-sm font-medium text-mute transition-colors hover:text-white">
+                Logga in
+              </Link>
+              <Link href="/logga-in?registrera=1" className="btn-primary !px-5 !py-2.5 text-sm">
+                Bli medlem
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -89,10 +115,17 @@ export function Header() {
               {l.label}
             </Link>
           ))}
-          <div className="mt-2 flex gap-2">
-            <Link href="/logga-in" className="btn-ghost flex-1 justify-center">Logga in</Link>
-            <Link href="/logga-in?registrera=1" className="btn-primary flex-1 justify-center">Bli medlem</Link>
-          </div>
+          {user ? (
+            <div className="mt-2 flex gap-2">
+              {user.role === "admin" && <Link href="/admin" className="btn-ghost flex-1 justify-center text-gold">Admin</Link>}
+              <button onClick={signOut} className="btn-ghost flex-1 justify-center">Logga ut</button>
+            </div>
+          ) : (
+            <div className="mt-2 flex gap-2">
+              <Link href="/logga-in" className="btn-ghost flex-1 justify-center">Logga in</Link>
+              <Link href="/logga-in?registrera=1" className="btn-primary flex-1 justify-center">Bli medlem</Link>
+            </div>
+          )}
         </nav>
       </div>
     </header>

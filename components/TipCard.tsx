@@ -1,18 +1,15 @@
 import Link from "next/link";
 import { GlowCard } from "./GlowCard";
-import { formatKickoff, formatOdds, type Tip } from "@/lib/tips";
+import { formatKickoff, formatOdds, statusLabel, type Tip } from "@/lib/tips";
 
 const statusStyle: Record<Tip["status"], string> = {
   vunnen: "bg-win/15 text-win border-win/30",
   förlorad: "bg-loss/15 text-loss border-loss/30",
   pågår: "bg-gold/15 text-gold border-gold/30",
+  struken: "bg-white/5 text-mute border-line",
 };
 
-const statusLabel: Record<Tip["status"], string> = {
-  vunnen: "Vunnen",
-  förlorad: "Förlorad",
-  pågår: "Kommande",
-};
+export const statusStyles = statusStyle;
 
 export function TipCard({ tip }: { tip: Tip }) {
   return (

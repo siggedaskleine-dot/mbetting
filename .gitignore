@@ -5,3 +5,5 @@ out
 !.env.example
 next-env.d.ts
 *.tsbuildinfo
+local.db*
+/drizzle
