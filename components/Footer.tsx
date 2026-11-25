@@ -17,6 +17,7 @@ export function Footer() {
             <li><Link className="hover:text-white" href="/tips">Speltips</Link></li>
             <li><Link className="hover:text-white" href="/forum">Forum</Link></li>
             <li><Link className="hover:text-white" href="/logga-in">Logga in</Link></li>
+            <li><Link className="hover:text-white" href="/integritet">Villkor och integritet</Link></li>
           </ul>
         </div>
         <div>

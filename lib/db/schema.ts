@@ -78,3 +78,39 @@ export const tip = sqliteTable("tip", {
 
 export type Tip = typeof tip.$inferSelect;
 export type TipStatus = Tip["status"];
+
+// ---------- Forum ----------
+
+export const forumCategory = sqliteTable("forum_category", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  slug: text("slug").notNull().unique(),
+  name: text("name").notNull(),
+  description: text("description").notNull().default(""),
+  icon: text("icon").notNull().default("💬"),
+  sortOrder: integer("sort_order").notNull().default(0),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(now),
+});
+
+export const forumThread = sqliteTable("forum_thread", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  categoryId: integer("category_id").notNull().references(() => forumCategory.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  pinned: integer("pinned", { mode: "boolean" }).notNull().default(false),
+  locked: integer("locked", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(now),
+  lastPostAt: integer("last_post_at", { mode: "timestamp_ms" }).notNull().default(now),
+});
+
+export const forumPost = sqliteTable("forum_post", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  threadId: integer("thread_id").notNull().references(() => forumThread.id, { onDelete: "cascade" }),
+  authorId: text("author_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+  body: text("body").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp_ms" }).notNull().default(now),
+  editedAt: integer("edited_at", { mode: "timestamp_ms" }),
+});
+
+export type ForumCategory = typeof forumCategory.$inferSelect;
+export type ForumThread = typeof forumThread.$inferSelect;
+export type ForumPost = typeof forumPost.$inferSelect;

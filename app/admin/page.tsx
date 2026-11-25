@@ -17,7 +17,10 @@ export default async function AdminPage({ searchParams }: Props) {
           <p className="text-sm font-semibold uppercase tracking-wider text-win">Admin</p>
           <h1 className="mt-1 font-display text-4xl font-extrabold">Dina tips</h1>
         </div>
-        <Link href="/admin/nytt" className="btn-primary">+ Nytt tips</Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href="/admin/forum" className="btn-ghost">Forumkategorier</Link>
+          <Link href="/admin/nytt" className="btn-primary">+ Nytt tips</Link>
+        </div>
       </div>
 
       {sp.sparat && (

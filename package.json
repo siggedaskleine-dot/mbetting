@@ -4,11 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "tsx scripts/migrate.ts && next build",
     "start": "next start",
     "lint": "tsc --noEmit",
-    "db:push": "drizzle-kit push",
-    "db:seed": "tsx scripts/seed.ts"
+    "db:seed": "tsx scripts/seed.ts",
+    "db:migrate": "tsx scripts/migrate.ts",
+    "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
     "@libsql/client": "^0.18.0",
